@@ -188,6 +188,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 			if(!has_filter('wpcf7_verify_nonce', 'is_user_logged_in')){
                 add_filter('wpcf7_verify_nonce', 'is_user_logged_in');
             }
+            bc_build_update_checker('https://github.com/beavercoffee/bc-cf7-payment-intent', $this->file, 'bc-cf7-payment-intent');
             $this->fields = ['cc-csc', 'cc-exp-mm', 'cc-exp-yy', 'cc-name', 'cc-number'];
         }
 
