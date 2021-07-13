@@ -230,13 +230,18 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 $submission->set_status('aborted'); // try to prevent conflicts with other plugins
             } else {
                 $response = $message;
-                if(bc_cf7_mail($contact_form)){
-                    $submission->set_response($response . ' ' . $contact_form->message('mail_sent_ok'));
+                if(bc_cf7_skip_mail($contact_form)){
+                    $submission->set_response($response);
                     $submission->set_status('mail_sent');
-    			} else {
-                    $submission->set_response($response . ' ' . $contact_form->message('mail_sent_ng'));
-    				$submission->set_status('mail_failed');
-    			}
+                } else {
+                    if(bc_cf7_mail($contact_form)){
+                        $submission->set_response($response . ' ' . $contact_form->message('mail_sent_ok'));
+                        $submission->set_status('mail_sent');
+        			} else {
+                        $submission->set_response($response . ' ' . $contact_form->message('mail_sent_ng'));
+        				$submission->set_status('mail_failed');
+        			}
+                }
             }
             //$this->setup_meta_data($contact_form, $submission);
             // maybe update metadata
