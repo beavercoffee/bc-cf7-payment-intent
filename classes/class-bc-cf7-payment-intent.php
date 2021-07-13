@@ -52,22 +52,6 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		private function get_type($contact_form = null){
-            if(null === $contact_form){
-                $contact_form = wpcf7_get_current_contact_form();
-            }
-            if(null === $contact_form){
-                return '';
-            }
-            $type = $contact_form->pref('bc_type');
-            if(null === $type){
-                return '';
-            }
-            return $type;
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         private function sanitize_posted_data($value){
             if(is_array($value)){
     			$value = array_map([$this, 'sanitize_posted_data'], $value);
@@ -134,7 +118,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 return $output;
             }
             $contact_form = wpcf7_get_current_contact_form();
-			if('payment-intent' !== $this->get_type($contact_form)){
+			if('payment-intent' !== bc_cf7_type($contact_form)){
                 return $output;
             }
             $tags = wp_list_pluck($contact_form->scan_form_tags(), 'type', 'name');
@@ -195,7 +179,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         public function wpcf7_before_send_mail($contact_form, &$abort, $submission){
-        	if('payment-intent' !== $this->get_type($contact_form)){
+        	if('payment-intent' !== bc_cf7_type($contact_form)){
                 return;
             }
 			if(!$submission->is('init')){
@@ -246,7 +230,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 $submission->set_status('aborted'); // try to prevent conflicts with other plugins
             } else {
                 $response = $message;
-                if($submission->mail()){
+                if(bc_cf7_mail($contact_form)){
                     $submission->set_response($response . ' ' . $contact_form->message('mail_sent_ok'));
                     $submission->set_status('mail_sent');
     			} else {
@@ -276,7 +260,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
             if(null === $contact_form){
                 return $posted_data;
             }
-            if('payment-intent' !== $this->get_type($contact_form)){
+            if('payment-intent' !== bc_cf7_type($contact_form)){
                 return $posted_data;
             }
             foreach($this->fields as $field){
