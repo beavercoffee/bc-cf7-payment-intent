@@ -225,7 +225,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 					}
 				}
 			}
-            $payment_intent = new BC_Payment_Intent($post_id);
+            $payment_intent = BC_Payment_Intent::get_instance($post_id);
             $this->setup_posted_data();
             $payment_intent = apply_filters('bc_payment_intent_object', $payment_intent, $this->posted_data, $contact_form, $submission);
             if($payment_intent instanceof BC_Payment_Intent){
@@ -275,8 +275,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
             if(null === $contact_form){
                 return $posted_data;
             }
-            $type = $contact_form->pref('bc_form_type');
-            if('payment_intent' !== $type){
+            if('payment-intent' !== $this->get_type($contact_form)){
                 return $posted_data;
             }
             foreach($this->fields as $field){

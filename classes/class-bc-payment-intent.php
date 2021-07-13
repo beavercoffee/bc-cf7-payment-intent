@@ -50,6 +50,7 @@ if(!class_exists('BC_Payment_Intent')){
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     	private function __construct($post_id = 0){
+            $this->post_id = $post_id;
             if(metadata_exists('post', $post_id, 'bc_payment_intent_status')){
                 $status = (bool) get_post_meta($post_id, 'bc_payment_intent_status', true);
                 $this->status = $status;
@@ -71,7 +72,6 @@ if(!class_exists('BC_Payment_Intent')){
                 $data = '';
                 $this->set_data($data);
             }
-            $this->post_id = $post_id;
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
