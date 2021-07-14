@@ -12,7 +12,7 @@ Plugin URI: https://github.com/beavercoffee/bc-cf7-payment-intent
 Requires at least: 5.7
 Requires PHP: 5.6
 Text Domain: bc-cf7-payment-intent
-Version: 1.7.13.2
+Version: 1.7.14
 */
 
 if(defined('ABSPATH')){

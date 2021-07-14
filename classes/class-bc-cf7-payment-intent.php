@@ -64,28 +64,6 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        /*private function setup_meta_data($contact_form, $submission){
-            $meta_data = [
-                'bc_container_post_id' => $submission->get_meta('container_post_id'),
-                'bc_current_user_id' => $submission->get_meta('current_user_id'),
-                'bc_id' => $contact_form->id(),
-                'bc_locale' => $contact_form->locale(),
-                'bc_name' => $contact_form->name(),
-                'bc_remote_ip' => $submission->get_meta('remote_ip'),
-                'bc_remote_port' => $submission->get_meta('remote_port'),
-                'bc_response' => $submission->get_response(),
-                'bc_status' => $submission->get_status(),
-                'bc_timestamp' => $submission->get_meta('timestamp'),
-                'bc_title' => $contact_form->title(),
-                'bc_unit_tag' => $submission->get_meta('unit_tag'),
-                'bc_url' => $submission->get_meta('url'),
-                'bc_user_agent' => $submission->get_meta('user_agent'),
-            ];
-            $this->meta_data = $meta_data;
-        }*/
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         private function setup_posted_data(){
             $posted_data = array_filter((array) $_POST, function($key){
     			return in_array($key, $this->fields);
@@ -188,7 +166,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
             $abort = true; // prevent mail_sent and mail_failed actions
             $post_id = wp_insert_post([
 				'post_status' => 'private',
-				'post_title' => sprintf('[bc-payment-intent]'),
+				'post_title' => '[bc-payment-intent]',
 				'post_type' => 'bc_payment_intent',
 			], true);
             if(is_wp_error($post_id)){
@@ -197,22 +175,9 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 return;
             }
 			$this->post_id = $post_id;
-            $posted_data = $submission->get_posted_data();
-            if($posted_data){
-            	foreach($posted_data as $key => $value){
-	                if(is_array($value)){
-						delete_post_meta($post_id, $key);
-						foreach($value as $single){
-							add_post_meta($post_id, $key, $single);
-						}
-					} else {
-	                    update_post_meta($post_id, $key, $value);
-					}
-				}
-			}
-            $payment_intent = BC_Payment_Intent::get_instance($post_id);
             $this->setup_posted_data();
-            $payment_intent = apply_filters('bc_payment_intent_object', $payment_intent, $this->posted_data, $contact_form, $submission);
+            $payment_intent = BC_Payment_Intent::get_instance($post_id);
+            $payment_intent = apply_filters('bc_payment_intent', $payment_intent, $this->posted_data, $contact_form, $submission);
             if($payment_intent instanceof BC_Payment_Intent){
                 $data = $payment_intent->get_data();
                 $message = $payment_intent->get_message();
@@ -243,9 +208,9 @@ if(!class_exists('BC_CF7_Payment_Intent')){
         			}
                 }
             }
-            //$this->setup_meta_data($contact_form, $submission);
-            // maybe update metadata
-            do_action('bc_payment_intent', $post_id, $contact_form, $submission, $payment_intent);
+            bc_cf7_update_meta_data(bc_cf7_meta_data($contact_form, $submission), $post_id);
+            bc_cf7_update_posted_data($submission->get_posted_data(), $post_id);
+            bc_cf7_update_uploaded_files($submission->uploaded_files(), $post_id);
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
