@@ -120,9 +120,6 @@ if(!class_exists('BC_CF7_Payment_Intent')){
             if($tags['cc-exp-yy'] !== 'select*'){
                 $invalid[] = 'cc-exp-yy';
             }
-            if($tags['cc-name'] !== 'text*'){
-                $invalid[] = 'cc-name';
-            }
             if($tags['cc-number'] !== 'number*'){
                 $invalid[] = 'cc-number';
             }
@@ -151,7 +148,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 add_filter('wpcf7_verify_nonce', 'is_user_logged_in');
             }
             bc_build_update_checker('https://github.com/beavercoffee/bc-cf7-payment-intent', $this->file, 'bc-cf7-payment-intent');
-            $this->fields = ['cc-csc', 'cc-exp-mm', 'cc-exp-yy', 'cc-name', 'cc-number'];
+            $this->fields = ['cc-csc', 'cc-exp-mm', 'cc-exp-yy', 'cc-number'];
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
