@@ -37,7 +37,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
     	//
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        private $fields = [], $file = '', $meta_data = [], $post_id = 0, $posted_data = [];
+        private $additional_data = [], $fields = [], $file = '', $meta_data = [], $post_id = 0, $posted_data = [];
 
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -78,18 +78,6 @@ if(!class_exists('BC_CF7_Payment_Intent')){
     	// public
     	//
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        public function init(){
-            register_post_type('bc_payment_intent', [
-                'labels' => bc_post_type_labels('Payment intent', 'Payment intents', false),
-                'menu_icon' => 'dashicons-money-alt',
-                'show_in_admin_bar' => false,
-                'show_ui' => true,
-                'supports' => ['custom-fields', 'title'],
-            ]);
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         public function do_shortcode_tag($output, $tag, $attr, $m){
             if('contact-form-7' !== $tag){
@@ -132,6 +120,18 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        public function init(){
+            register_post_type('bc_payment_intent', [
+                'labels' => bc_post_type_labels('Payment intent', 'Payment intents', false),
+                'menu_icon' => 'dashicons-money-alt',
+                'show_in_admin_bar' => false,
+                'show_ui' => true,
+                'supports' => ['custom-fields', 'title'],
+            ]);
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         public function plugins_loaded(){
         	if(!defined('BC_FUNCTIONS')){
         		return;
@@ -144,6 +144,12 @@ if(!class_exists('BC_CF7_Payment_Intent')){
 			add_action('wpcf7_enqueue_scripts', [$this, 'wpcf7_enqueue_scripts']);
             add_filter('do_shortcode_tag', [$this, 'do_shortcode_tag'], 10, 4);
             add_filter('wpcf7_posted_data', [$this, 'wpcf7_posted_data']);
+            add_filter('wpcf7_posted_data_checkbox', [$this, 'wpcf7_posted_data_type'], 10, 3);
+            add_filter('wpcf7_posted_data_checkbox*', [$this, 'wpcf7_posted_data_type'], 10, 3);
+            add_filter('wpcf7_posted_data_radio', [$this, 'wpcf7_posted_data_type'], 10, 3);
+            add_filter('wpcf7_posted_data_radio*', [$this, 'wpcf7_posted_data_type'], 10, 3);
+            add_filter('wpcf7_posted_data_select', [$this, 'wpcf7_posted_data_type'], 10, 3);
+            add_filter('wpcf7_posted_data_select*', [$this, 'wpcf7_posted_data_type'], 10, 3);
 			if(!has_filter('wpcf7_verify_nonce', 'is_user_logged_in')){
                 add_filter('wpcf7_verify_nonce', 'is_user_logged_in');
             }
@@ -223,6 +229,9 @@ if(!class_exists('BC_CF7_Payment_Intent')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         public function wpcf7_posted_data($posted_data){
+            if($this->additional_data){
+                $posted_data = array_merge($posted_data, $this->additional_data);
+            }
             $contact_form = wpcf7_get_current_contact_form();
             if(null === $contact_form){
                 return $posted_data;
@@ -236,6 +245,35 @@ if(!class_exists('BC_CF7_Payment_Intent')){
         		}
         	}
         	return $posted_data;
+        }
+
+    	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        public function wpcf7_posted_data_type($value, $value_orig, $tag){
+			$name = $tag->name;
+            $pipes = $tag->pipes;
+            $type = $tag->type;
+			if(wpcf7_form_tag_supports($type, 'selectable-values')){
+                $value = (array) $value;
+                $value_orig = (array) $value_orig;
+				if($tag->has_option('free_text')){
+        			$last_val = array_pop($value);
+					list($tied_item) = array_slice(WPCF7_USE_PIPE ? $tag->pipes->collect_afters() : $tag->values, -1, 1);
+					$tied_item = html_entity_decode($tied_item, ENT_QUOTES, 'UTF-8');
+					if(strpos($last_val, $tied_item) === 0){
+						$value[] = $tied_item;
+						$this->additional_data[$name . '_free_text'] = trim(str_replace($tied_item, '', $last_val));
+					} else {
+						$value[] = $last_val;
+						$this->additional_data[$name . '_free_text'] = '';
+					}
+                }
+            }
+			if(WPCF7_USE_PIPE and $pipes instanceof WPCF7_Pipes and !$pipes->zero()){
+				$this->additional_data[$name . '_value'] = $value;
+				$value = $value_orig;
+            }
+            return $value;
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
