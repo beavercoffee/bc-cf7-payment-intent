@@ -48,7 +48,6 @@ if(!class_exists('BC_CF7_Payment_Intent')){
     	private function __construct($file = ''){
             $this->file = $file;
             add_action('bc_cf7_loaded', [$this, 'bc_cf7_loaded']);
-            add_action('bc_functions_loaded', [$this, 'bc_functions_loaded']);
         }
 
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,25 +74,14 @@ if(!class_exists('BC_CF7_Payment_Intent')){
         public function bc_cf7_loaded(){
             add_action('init', [$this, 'init']);
             add_action('wpcf7_before_send_mail', [$this, 'wpcf7_before_send_mail'], 10, 3);
-			add_action('wpcf7_enqueue_scripts', [$this, 'wpcf7_enqueue_scripts']);
             add_filter('do_shortcode_tag', [$this, 'do_shortcode_tag'], 10, 4);
-            add_filter('wpcf7_posted_data', [$this, 'wpcf7_posted_data']);
+            add_filter('wpcf7_posted_data', [$this, 'wpcf7_posted_data'], 15);
 			if(!has_filter('wpcf7_verify_nonce', 'is_user_logged_in')){
                 add_filter('wpcf7_verify_nonce', 'is_user_logged_in');
             }
-            $this->fields = ['cc-csc', 'cc-exp-mm', 'cc-exp-yy', 'cc-number'];
-            do_action('bc_cf7_payment_intent_loaded');
-        }
-
-    	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        public function bc_functions_loaded(){
             bc_build_update_checker('https://github.com/beavercoffee/bc-cf7-payment-intent', $this->file, 'bc-cf7-payment-intent');
-            if(!bc_is_plugin_active('bc-cf7/bc-cf7.php')){
-                add_action('admin_notices', function(){
-                    echo bc_admin_notice(sprintf(__('No plugins found for: %s.'),'<strong>BC CF7</strong>'));
-                });
-        	}
+            $this->fields = ['cc-amount', 'cc-csc', 'cc-exp-mm', 'cc-exp-yy', 'cc-number'];
+            do_action('bc_cf7_payment_intent_loaded');
         }
 
     	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,6 +105,9 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 return '<div class="alert alert-danger" role="alert">' . $error . '</div>';
             }
             $invalid = [];
+            if(!in_array($tags['cc-amount'], ['hidden', 'number*', 'select*'])){
+                $invalid[] = 'cc-amount';
+            }
             if($tags['cc-csc'] !== 'number*'){
                 $invalid[] = 'cc-csc';
             }
@@ -202,17 +193,7 @@ if(!class_exists('BC_CF7_Payment_Intent')){
                 }
             }
             bc_cf7()->update($contact_form, $submission, 'post', $post_id);
-
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        public function wpcf7_enqueue_scripts(){
-        	if(isset($_SERVER['HTTP_USER_AGENT']) and false !== strpos($_SERVER['HTTP_USER_AGENT'], 'Mobile')){
-        		$src = plugin_dir_url($this->file) . 'assets/bc-cf7-payment-intent.js';
-	            $ver = filemtime(plugin_dir_path($this->file) . 'assets/bc-cf7-payment-intent.js');
-	            wp_enqueue_script('bc-cf7-payment-intent', $src, ['contact-form-7'], $ver, true);
-        	}
+            do_action('bc_cf7_payment_intent_processed', $post_id, $contact_form, $submission);
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
